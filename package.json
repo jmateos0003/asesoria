@@ -1,0 +1,16 @@
+{
+  "name": "asesoria-citas-production",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/api & npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "db:generate": "npm run prisma:generate --workspace apps/api",
+    "db:migrate": "npm run prisma:migrate --workspace apps/api",
+    "db:seed": "npm run prisma:seed --workspace apps/api",
+    "lint": "npm run lint --workspace apps/web"
+  }
+}
