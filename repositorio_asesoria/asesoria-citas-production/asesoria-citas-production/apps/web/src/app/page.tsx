@@ -8,30 +8,41 @@ type Slot = {
   available: boolean;
 };
 
+type MessageType = 'success' | 'error' | '';
+
 export default function BookingPage() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [date, setDate] = useState(today);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState('');
   const [loading, setLoading] = useState(false);
+  const [messageType, setMessageType] = useState<MessageType>('');
   const [message, setMessage] = useState('');
 
   async function loadSlots() {
-    setMessage('');
     const data = await apiFetch<{ slots: Slot[] }>(`/availability?date=${date}`);
     setSlots(data.slots);
   }
 
   useEffect(() => {
-    loadSlots().catch(() => setMessage('No se han podido cargar los horarios.'));
+    setMessage('');
+    setMessageType('');
+
+    loadSlots().catch(() => {
+      setMessageType('error');
+      setMessage('No se han podido cargar los horarios.');
+    });
   }, [date]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
     setLoading(true);
     setMessage('');
-
-    const formData = new FormData(event.currentTarget);
+    setMessageType('');
 
     try {
       await apiFetch('/appointments', {
@@ -46,11 +57,14 @@ export default function BookingPage() {
         })
       });
 
-      setMessage('Solicitud enviada. Te avisaremos por email cuando sea aprobada.');
-      event.currentTarget.reset();
+      form.reset();
       setSelectedSlot('');
       await loadSlots();
+
+      setMessageType('success');
+      setMessage('Solicitud enviada correctamente.');
     } catch (error) {
+      setMessageType('error');
       setMessage(error instanceof Error ? error.message : 'Error enviando la solicitud.');
     } finally {
       setLoading(false);
@@ -145,7 +159,20 @@ export default function BookingPage() {
             >
               {loading ? 'Enviando...' : 'Solicitar cita'}
             </button>
-            {message && <p className="rounded-xl bg-slate-100 p-3 text-sm">{message}</p>}
+
+            {messageType === 'success' && (
+              <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-900">
+                <p className="font-bold">✅ {message}</p>
+                <p className="mt-1">Hemos recibido tu solicitud de cita.</p>
+                <p>Te enviaremos una confirmación por email cuando sea revisada.</p>
+              </div>
+            )}
+
+            {messageType === 'error' && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+                {message}
+              </div>
+            )}
           </div>
         </form>
       </section>
