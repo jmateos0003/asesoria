@@ -1,16 +1,17 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
+
 RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package*.json ./
-COPY apps/api/package*.json apps/api/
 RUN npm install
 
-COPY apps/api apps/api
-WORKDIR /app/apps/api
+COPY . .
 
-RUN npm run prisma:generate
+RUN npx prisma generate
 RUN npm run build
 
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/server.js"]
+
+CMD ["sh", "-c", "npx prisma db push && npx tsx prisma/seed.ts && npm run start"]
