@@ -12,5 +12,8 @@
     "db:migrate": "npm run prisma:migrate --workspace apps/api",
     "db:seed": "npm run prisma:seed --workspace apps/api",
     "lint": "npm run lint --workspace apps/web"
+  },
+  "dependencies": {
+    "resend": "^6.12.4"
   }
 }

@@ -1,19 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { env } from '../config/env.js';
 
-const hasSmtpConfig = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
-
-const transporter = hasSmtpConfig
-  ? nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: env.SMTP_SECURE,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS
-      }
-    })
-  : null;
+const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 type SendEmailInput = {
   to: string;
@@ -22,7 +10,7 @@ type SendEmailInput = {
 };
 
 export async function sendEmail(input: SendEmailInput) {
-  if (!transporter) {
+  if (!resend) {
     console.info('[email:disabled]', {
       to: input.to,
       subject: input.subject
@@ -30,12 +18,17 @@ export async function sendEmail(input: SendEmailInput) {
     return;
   }
 
-  await transporter.sendMail({
-    from: env.MAIL_FROM,
-    to: input.to,
+  const { error } = await resend.emails.send({
+    from: env.MAIL_FROM || 'Asesoría <onboarding@resend.dev>',
+    to: [input.to],
     subject: input.subject,
     html: input.html
   });
+
+  if (error) {
+    console.error('[email:error]', error);
+    throw new Error('No se pudo enviar el email');
+  }
 }
 
 function formatDate(date: Date) {
@@ -57,6 +50,7 @@ export async function notifyAdminNewAppointment(appointment: {
   if (!env.ADMIN_NOTIFICATION_EMAIL) return;
 
   const adminUrl = `${env.PUBLIC_APP_URL}/admin`;
+
   await sendEmail({
     to: env.ADMIN_NOTIFICATION_EMAIL,
     subject: `Nueva solicitud de cita de ${appointment.clientName}`,
