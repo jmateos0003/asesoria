@@ -9,6 +9,7 @@ import { publicRouter } from './routes/public.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 
 export const app = express();
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors({ origin: env.WEB_ORIGIN, credentials: true }));
